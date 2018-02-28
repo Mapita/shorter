@@ -250,6 +250,11 @@ async function requestManualLinkEndings(app, endings){
 }
 
 async function visitLink(app, request, link){
+    // Completely ignore visits made by certain IP addresses, as specified by
+    // the server config.
+    if(app.config.ignoreVisitorIpAddresses.indexOf(request.ip) >= 0){
+        return;
+    }
     // Get the time of the visit
     const timestamp = moment();
     // Base object to be inserted into the database
@@ -271,12 +276,10 @@ async function visitLink(app, request, link){
     // Get whether the user has asked not to be tracked, or if this visitor's
     // IP address is in the list of IPs that the config says should be ignored.
     const doNotTrack = request.headers.dnt === "1";
-    const excludeIp = app.config.ignoreVisitorIpAddresses.indexOf(request.ip) >= 0;
-    // If the user allows tracking and their IP is not in the list of IPs to
-    // exclude from analytics, record an identifying hash so that the service
+    // If the user allows tracking, record an identifying hash so that the service
     // may report unique/repeat visitors; also record the rough geographic area
     // where the visitor is probably located.
-    if(!doNotTrack && !excludeIp){
+    if(!doNotTrack){
         // Get the visitor's anonymized IP address. IP addresses are anonymized
         // using the same standardized method as Google Analytics.
         // See https://support.google.com/analytics/answer/2763052?hl=en
