@@ -5,7 +5,9 @@
     "hostName": "http://localhost:8080",
     "unitTestHostUrl": "http://localhost:8080",
     "pageNotFoundUrl": "https://maptionnaire.com/notfound",
-    "omitIpAddresses": [
+    "ignoreVisitorIpAddresses": [
+        "::1",
+        "127.0.0.1",
         "82.181.149.112"
     ],
     "forbiddenEndingSubstrings": [
