@@ -1,0 +1,38 @@
+{
+  "name": "Shorter",
+  "version": "0.1.0",
+  "description": "Free open-source link shortener created by Mapita.",
+  "homepage": "http://www.mapita.fi",
+  "main": "main.js",
+  "contributors": [
+    {
+      "name": "Sophie Kirschner",
+      "email": "sophie.kirschner@mapita.fi"
+    },
+    {
+      "name": "Timo Rüppell",
+      "email": "timo.ruppell@mapita.fi"
+    }
+  ],
+  "dependencies": {
+    "axios": "^0.17.1",
+    "bcrypt": "^1.0.3",
+    "bluebird": "^3.5.0",
+    "body-parser": "^1.16.0",
+    "cookie-parser": "^1.4.3",
+    "express": "^4.14.1",
+    "express-useragent": "^1.0.12",
+    "knex": "0.13.0",
+    "minimist": "^1.2.0",
+    "moment": "^2.17.1",
+    "objection": "^0.9.4",
+    "pg": "^6.2.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mapita/shorter"
+  },
+  "scripts": {
+    "start": "node main.js"
+  }
+}

@@ -1,0 +1,23 @@
+{
+    "port": 8080,
+    "staticFilesPath": "../client",
+    "staticFilesMaxAge": [5, "days"],
+    "hostName": "http://localhost:8080",
+    "unitTestHostUrl": "http://localhost:8080",
+    "pageNotFoundUrl": "https://maptionnaire.com/notfound",
+    "omitIpAddresses": [
+        "82.181.149.112"
+    ],
+    "forbiddenEndingSubstrings": [
+        "ASS",
+        "CUM",
+        "DIE",
+        "FAG",
+        "FAP",
+        "FUK",
+        "GOD",
+        "GUN",
+        "TIT",
+        "WEE"
+    ]
+}
