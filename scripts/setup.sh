@@ -96,7 +96,7 @@ env PATH=$PATH:/usr/local/bin pm2 startup ubuntu -u root
 echo "Installing and configuring nginx."
 apt-get install nginx -y --fix-missing >> $LOG
 rm /etc/nginx/sites-enabled/default
-ln -s /opt/shorter/src/config/nginx.conf /etc/nginx/sites-enabled/benches
+ln -s /opt/shorter/src/config/nginx.conf /etc/nginx/sites-enabled/shorter
 /etc/init.d/nginx restart
 
 echo "Starting server."
