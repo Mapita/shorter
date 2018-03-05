@@ -57,14 +57,21 @@ module.exports = {
                 // return promises, but at some point in the future ALL
                 // routes ought to return promises and this conditional
                 // ought to be eliminated.
-                const promise = route.call(request, response);
+                let promise = undefined;
+                try{
+                    promise = route.call(request, response);
+                }catch(error){
+                    console.error(`Error calling route ${route.path}:`);
+                    console.error(error);
+                    return response.serverError();
+                }
                 if(promise && promise instanceof Promise){
                     promise.then(data => {
                         // Better than leaving the client hanging until timeout
                         // when I forgot to complete the response in an endpoint.
                         if(!response.finished){
                             console.error("Route did not complete its response.");
-                            response.serverError();
+                            return response.serverError();
                         }
                     }).catch(error => {
                         response.catchError(error);
