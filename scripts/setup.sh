@@ -45,14 +45,14 @@ apt-get update >> $LOG
 echo "Installing git."
 apt-get install git -y --fix-missing >> $LOG
 echo "Retrieving application source from github."
-git clone git@github.com:Mapita/shorter.git /opt/shorter/src
+git clone https://github.com/Mapita/shorter.git /opt/shorter/src
 chown -R ubuntu:ubuntu /opt/shorter/src
 
 echo "Installing nodejs."
 # https://nodejs.org/en/download/package-manager/#debian-and-ubuntu-based-linux-distributions
 curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash - >> $LOG
 apt-get install nodejs -y --fix-missing >> $LOG
-npm install -g npm@3.10.10 >> $LOG
+npm install -g npm@5.6.0 >> $LOG
 
 # Generate files to run and configure the server
 echo "Generating user scripts and config files."
@@ -84,12 +84,8 @@ echo "$SHORTER_DB_HOST:$SHORTER_DB_PORT:$SHORTER_DB_NAME:$SHORTER_DB_USER:$SHORT
 chmod 0600 /home/ubuntu/.pgpass
 echo "export PGPASSFILE=/home/ubuntu/.pgpass" >> $PROFILE
 
-echo "Installing python."
-apt-get install python python-pip -y --fix-missing >> $LOG
-pip install psycopg2 >> $LOG
-
 echo "Installing backend dependencies."
-cd /opt/shorter/src/server
+cd /opt/shorter/src
 npm install >> $LOG
 
 echo "Installing process manager pm2."
