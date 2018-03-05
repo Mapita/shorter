@@ -15,8 +15,6 @@ create table "shorter"."Links" (
     "creationTime" timestamp not null default '1970-01-01 05:00:01',
     -- The last time that anyone modified this link
     "lastModifiedTime" timestamp not null default '1970-01-01 05:00:01',
-    -- Whether this link is active (or has been deleted)
-    "disabled" boolean not null default false,
     primary key("linkId")
 );
 create index "shorterLinkEndingIndex"
@@ -34,7 +32,7 @@ create table "shorter"."LinkEndings" (
 drop table if exists "shorter"."LinkTags";
 create table "shorter"."LinkTags" (
     -- The link ID that this tag applies to
-    "linkId" boolean not null default false,
+    "linkId" int not null,
     -- The name of this tag
     "tagName" varchar not null,
     primary key("linkId", "tagName")

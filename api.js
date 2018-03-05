@@ -103,6 +103,117 @@ const routes = [
         },
     },
     {
+        "path": "/api/v1/get",
+        "method": "POST",
+        "authenticated": true,
+        "description": "Get information about the link with a certain ending.",
+        "requestAttributes": {
+            "ending": {"type": "string", "required": true}
+        },
+        "responseAttributes": {
+            "url": {"type": "string"},
+            "ending": {"type": "string"},
+            "shortUrl": {"type": "string"},
+            "creationTime": {"type": "timestamp"},
+            "lastModifiedTime": {"type": "timestamp"},
+            "tags": {
+                "type": "list",
+                "each": {"type": "string"},
+            },
+        },
+    },
+    {
+        "path": "/api/v1/update",
+        "method": "POST",
+        "authenticated": true,
+        "description": "Update a shortened link.",
+        "requestAttributes": {
+            "url": {"type": "string?", "required": false},
+            "ending": {"type": "string", "required": true},
+            "tags": {
+                "type": "list?",
+                "required": false,
+                "each": {"type": "string"},
+            },
+        },
+        "responseAttributes": {
+            "url": {"type": "string"},
+            "ending": {"type": "string"},
+            "shortUrl": {"type": "string"},
+            "creationTime": {"type": "timestamp"},
+            "lastModifiedTime": {"type": "timestamp"},
+            "tags": {
+                "type": "list",
+                "each": {"type": "string"},
+            },
+        },
+    },
+    {
+        "path": "/api/v1/delete",
+        "method": "POST",
+        "authenticated": true,
+        "description": "Delete a single shortened link.",
+        "requestAttributes": {
+            "ending": {"type": "string", "required": true}
+        },
+        "responseAttributes": {
+            "url": {"type": "string"},
+            "ending": {"type": "string"},
+            "shortUrl": {"type": "string"},
+            "creationTime": {"type": "timestamp"},
+            "lastModifiedTime": {"type": "timestamp"},
+            "tags": {
+                "type": "list",
+                "each": {"type": "string"},
+            },
+        },
+    },
+    {
+        "path": "/api/v1/list",
+        "method": "POST",
+        "authenticated": true,
+        "description": "Get information about registered links.",
+        "requestAttributes": {
+            "url": {"type": "string?", "required": false,
+                "description": "Get short links targeting this url."
+            },
+            "domain": {"type": "string?", "required": false,
+                "description": "Get short links targeting a url with this domain."
+            },
+            "tags": {
+                "type": "list?",
+                "required": false,
+                "each": {"type": "string"},
+                "description": "Get short links having all of these tags.",
+            },
+            "count": {"type": "integer", "required": false,
+                "minimum": 0, "maximum": 100, "default": 10
+            },
+            "offset": {"type": "integer", "required": false,
+                "minimum": 0, "default": 0
+            },
+        },
+        "responseAttributes": {
+            "links": {
+                "type": "list",
+                "each": {
+                    "type": "object",
+                    "attributes": {
+                        "url": {"type": "string"},
+                        "ending": {"type": "string"},
+                        "shortUrl": {"type": "string"},
+                        "creationTime": {"type": "timestamp"},
+                        "lastModifiedTime": {"type": "timestamp"},
+                        "tags": {
+                            "type": "list",
+                            "each": {"type": "string"},
+                        },
+                    }
+                }
+            }
+        },
+    },
+    {
         "path": "/api/v1/stats/histogram",
         "method": "POST",
         "authenticated": true,
@@ -163,7 +274,6 @@ const routes = [
 async function getLinkIdByEnding(app, ending){
     return await app.db.Link.select("linkId").where({
         "ending": ending,
-        "disabled": false,
     });
 }
 
@@ -248,7 +358,205 @@ module.exports = (app) => ({
             "lastModifiedTime": timestamp,
         }));
         await linkEndings.insertLinks(app, links);
+        // All done!
         response.success(links.map(links));
+    },
+    
+    "/api/v1/get": async (request, response) => {
+        // Get the row for the link with this ending
+        const link = await app.db.Link.select(
+            "linkId", "url", "ending", "creationTime", "lastModifiedTime"
+        ).first().where({
+            "ending": request.body.ending,
+        });
+        // If there was no such link, give an error response
+        if(!link){
+            return response.parametersError("Link ending does not exist.");
+        }
+        // Query for link tags
+        const tags = await app.db.LinkTag.select("tagName").where({
+            "linkId": link.linkId,
+        });
+        // All done!
+        return response.success({
+            "url": link.url,
+            "ending": link.ending,
+            "shortUrl": `${app.config.hostName}/${link.ending}`,
+            "tags": tags.map(tag => tag.tagName),
+            "creationTime": link.creationTime,
+            "lastModifiedTime": link.lastModifiedTime,
+        });
+    },
+    
+    "/api/v1/update": async (request, response) => {
+        // If nothing is being updated, respond with an error
+        if(!request.body.url && !request.body.tags){
+            return response.parametersError(
+                "The request must supply either a new url or a new list of tags."
+            );
+        }
+        // Get the current time; the lastModifiedTime column will be set to this
+        const timestamp = moment();
+        // Get the link row from the database
+        const link = await app.db.Link.select(
+            "linkId", "url", "ending", "creationTime"
+        ).first().where({
+            "ending": request.body.ending,
+        });
+        // If no link was found with this ending, respond immediately
+        if(!link){
+            return response.success({
+                "url": null,
+                "ending": request.body.ending,
+                "shortUrl": `${app.config.hostName}/${request.body.ending}`,
+                "tags": [],
+                "creationTime": null,
+                "lastModifiedTime": null,
+            });
+        }
+        // Update link information according to the request
+        let linkTags = undefined;
+        const linkUrl = request.body.url || link.url;
+        // Update lastModifiedTime, as well as the url if specified
+        await app.db.Link.update({
+            "url": linkUrl,
+            "lastModifiedTime": timestamp,
+        }).where({
+            "ending": request.body.ending,
+        });
+        // Update tags if the request provided a tag list
+        if(request.body.tags){
+            linkTags = request.body.tags;
+            // Clear existing tags
+            await app.db.LinkTag.delete().where({"linkId": link.linkId});
+            // Then insert the new tags
+            if(request.body.tags.length){
+                await linkEndings.insertLinkTags(app, request.body.tags.map(
+                    tagName => ({
+                        "linkId": link.linkId,
+                        "tagName": tagName,
+                    })
+                ));
+            }
+        }
+        // If the request didn't specify a new tags list, get the existing tags
+        // for inclusion in the response.
+        else{
+            linkTags = (await app.db.LinkTag.select("tagName").where({
+                "linkId": link.linkId,
+            })).map(tag => tag.tagName);
+        }
+        // All done!
+        return response.success({
+            "url": linkUrl,
+            "ending": request.body.ending,
+            "shortUrl": `${app.config.hostName}/${request.body.ending}`,
+            "tags": linkTags,
+            "creationTime": link.creationTime,
+            "lastModifiedTime": timestamp,
+        });
+    },
+    
+    "/api/v1/delete": async (request, response) => {
+        // Delete the row for this link ending
+        const link = await app.db.Link.delete().first().where({
+            "ending": request.body.ending,
+        }).returning(
+            "linkId", "url", "creationTime", "lastModifiedTime"
+        );
+        // If no row was deleted, then the link ending doesn't exist
+        // and the server should respond with a parameters error
+        if(!link){
+            return response.parametersError("Link ending does not exist.");
+        }
+        // Delete tags for this link ending
+        const tags = await app.db.LinkTag.delete().where({
+            "linkId": link.linkId,
+        }).returning("tagName");
+        // All done!
+        return response.success({
+            "url": link.url,
+            "ending": request.body.ending,
+            "shortUrl": `${app.config.hostName}/${request.body.ending}`,
+            "tags": tags.map(tag => tag.tagName),
+            "creationTime": link.creationTime,
+            "lastModifiedTime": link.lastModifiedTime,
+        });
+    },
+    
+    "/api/v1/list": async (request, response) => {
+        // Helper function to escape user input for use in a regular expression
+        // From https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
+        function escapeRegExp(string){
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        // Handle the special case where 0 links were requested
+        if(request.body.count <= 0){
+            return response.success({
+                "links": [],
+            });
+        }
+        // For the normal case: Build a query to get all links matching the request
+        let query = app.db.Link.alias("link").select(
+            "link.linkId", "link.url", "link.ending",
+            "link.creationTime", "link.lastModifiedTime"
+        );
+        // Filter links by target url
+        if(request.body.url){
+            query = query.where({
+                "url": request.body.url,
+            });
+        // Filter links by the domain of their target url, e.g. find all shortlinks
+        // pointing to anywhere on "maptionnaire.com"
+        }else if(request.body.domain){
+            // Build a regular expression to match links with a given domain
+            // Ought to behave generally as one should expect
+            const domain = (request.body.domain.endsWith("/") ?
+                request.body.domain.slice(0, request.body.domain.length - 1) : request.body.domain
+            );
+            const regex = `^([a-z]+://)?(www\.)?${escapeRegExp(request.body.domain)}(/.*|$)`;
+            query = query.where("link.url", "~", regex);
+        }
+        // Filter links by the presence of certain tags
+        if(request.body.tags){
+            for(let tag of request.body.tags){
+                query = query.whereExists(
+                    app.db.LinkTag.select(1).where({
+                        "linkId": app.knex.raw("??", "link.linkId"),
+                        "tagName": tag,
+                    })
+                );
+            }
+        }
+        // Apply pagination. Note that the request validator has already
+        // ensured that these values are appropriate
+        query = query.limit(request.body.count).offset(request.body.offset);
+        // And finally, query those links!
+        const links = await query;
+        // Get ready to retrieve tags - to this end, get a list of unique link IDs
+        // and map them to their respective link objects for quick access later.
+        // Also, since the links are being enumerated now anyway, attach an empty
+        // tags list and a computed "shortUrl" attribute to each entry.
+        const linkIds = [];
+        const linksById = {};
+        for(let link of links){
+            linkIds.push(link.linkId);
+            linksById[link.linkId] = link;
+            link.tags = [];
+            link.shortUrl = `${app.config.hostName}/${link.ending}`;
+        }
+        // Query all tags belonging to these links
+        const tags = await app.db.LinkTag.select("linkId", "tagName").whereIn(
+            "linkId", linkIds
+        );
+        // Attach the tags to their respective link objects
+        for(let tag of tags){
+            linksById[tag.linkId].tags.push(tag.tagName);
+        }
+        // All done!
+        response.success({
+            "links": links,
+        });
     },
     
     "/api/v1/stats/histogram": async (request, response) => {

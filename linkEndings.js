@@ -42,7 +42,9 @@ async function insertLinkEndings(app, endings){
         "ending": ending,
         "creationTime": timestamp,
     }));
-    return await app.knex.batchInsert("shorter.LinkEndings", insertions, 100);
+    return await app.knex.batchInsert(
+        "shorter.LinkEndings", insertions
+    );
 }
 
 async function insertLink(app, link){
@@ -50,7 +52,7 @@ async function insertLink(app, link){
 }
 
 async function insertLinks(app, links){
-    // Insert Link rows
+    // Build an array of link rows to insert
     const timestamp = moment();
     const insertLinks = links.map(link => ({
         "url": link.url,
@@ -58,27 +60,31 @@ async function insertLinks(app, links){
         "creationTime": (link.creationTime || timestamp).toDate(),
         "lastModifiedTime": (link.lastModifiedTime || timestamp).toDate(),
     }));
+    // Insert links and get their serial unique IDs back
     const linkIds = await app.knex.batchInsert(
-        "shorter.Links", insertLinks, 100
+        "shorter.Links", insertLinks
     ).returning("linkId");
     // Insert LinkTag rows
-    const insertLinkTags = [];
-    for(let i = 0; i < links.length; i++){
-        const link = links[i];
-        const linkId = linkIds[i];
-        if(link.tags){
-            for(let tagName of link.tags){
-                insertLinkTags.push({
-                    "linkId": linkId,
-                    "tagName": tagName,
-                });
+    await insertLinkTags(app, Array.from((function*(){
+        for(let i = 0; i < links.length; i++){
+            const link = links[i];
+            if(link.tags){
+                const linkId = linkIds[i];
+                for(let tagName of link.tags){
+                    yield {
+                        "linkId": linkId,
+                        "tagName": tagName,
+                    };
+                }
             }
         }
-    }
-    await app.knex.batchInsert(
-        "shorter.LinkTags", insertLinkTags, 100
+    })()));
+}
+
+function insertLinkTags(app, tags){
+    return app.knex.batchInsert(
+        "shorter.LinkTags", tags
     );
-    return;
 }
 
 async function generateLinkEndings(app, hashLength, count){
@@ -342,6 +348,7 @@ module.exports = {
     insertLinkEndings: insertLinkEndings,
     insertLink: insertLink,
     insertLinks: insertLinks,
+    insertLinkTags: insertLinkTags,
     generateLinkEndings: generateLinkEndings,
     generatePossibleLinkEndings: generatePossibleLinkEndings,
     generatePossibleLinkEnding: generatePossibleLinkEnding,
