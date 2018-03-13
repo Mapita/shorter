@@ -63,7 +63,7 @@ const routes = [
         "authenticated": true,
         "description": "Shorten a list of links.",
         "requestAttributes": {
-            "items": {
+            "links": {
                 "type": "list",
                 "required": true,
                 "each": {
@@ -83,7 +83,7 @@ const routes = [
             },
         },
         "responseAttributes": {
-            "items": {
+            "links": {
                 "type": "list",
                 "each": {
                     "type": "object",
@@ -315,7 +315,7 @@ module.exports = (app) => ({
     "/api/v1/shorten/batch": async (request, response) => {
         const timestamp = moment();
         // Verify specified endings
-        const manualEndings = request.body.items.filter(
+        const manualEndings = request.body.links.filter(
             item => item.ending
         ).map(
             item => item.ending
@@ -333,7 +333,7 @@ module.exports = (app) => ({
             }
         }
         // Generate link endings for those left unspecified
-        const generateEndings = request.body.items.filter(
+        const generateEndings = request.body.links.filter(
             item => !item.ending
         );
         const endings = await linkEndings.fetchLinkEndings(
@@ -349,7 +349,7 @@ module.exports = (app) => ({
             generateEndings[i].ending = endings[i];
         }
         // Now insert all of these as links
-        const links = request.body.items.map(item => ({
+        const links = request.body.links.map(item => ({
             "url": item.url,
             "ending": item.ending,
             "shortUrl": `${app.config.hostName}/${item.ending}`,
@@ -359,7 +359,9 @@ module.exports = (app) => ({
         }));
         await linkEndings.insertLinks(app, links);
         // All done!
-        response.success(links.map(links));
+        response.success({
+            "links": links,
+        });
     },
     
     "/api/v1/get": async (request, response) => {
