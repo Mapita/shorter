@@ -231,14 +231,23 @@ async function requestManualLinkEnding(app, ending){
         error.existingEnding = ending;
         throw error;
     }
-    await app.db.LinkEnding.remove().where({
+    await app.db.LinkEnding.delete().where({
         "ending": ending,
     });
-    return;
 }
 
 async function requestManualLinkEndings(app, endings){
-    // TODO: Check duplicates in the given list
+    // Check list for duplicates
+    let endingsDictionary = {};
+    for(let ending of endings){
+        if(endingsDictionary[ending]){
+            const error = new Error("Duplicate endings.");
+            error.existingEnding = ending;
+            throw error;
+        }
+        endingsDictionary[ending] = true;
+    }
+    // Check database for existing links with this ending
     const existing = await app.db.Link.select("ending").first().where({
         "disabled": false,
     }).whereIn(
@@ -249,10 +258,10 @@ async function requestManualLinkEndings(app, endings){
         error.existingEnding = existing;
         throw error;
     }
-    await app.db.LinkEnding.remove().whereIn(
+    // Remove any instances of these endings from the queue
+    await app.db.LinkEnding.delete().whereIn(
         "ending", endings
     );
-    return;
 }
 
 async function visitLink(app, request, link){
@@ -353,5 +362,6 @@ module.exports = {
     generatePossibleLinkEndings: generatePossibleLinkEndings,
     generatePossibleLinkEnding: generatePossibleLinkEnding,
     requestManualLinkEnding: requestManualLinkEnding,
+    requestManualLinkEndings: requestManualLinkEndings,
     visitLink: visitLink,
 };
