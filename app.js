@@ -55,7 +55,6 @@ module.exports = function(options){
         // Get the requested link ID and target URL
         let link = await app.db.Link.select("linkId", "url").first().where({
             "ending": ending,
-            "disabled": false,
         });
         // If not found, try again after replacing easily-confused symbols and
         // ignoring hypens.
@@ -74,7 +73,6 @@ module.exports = function(options){
             // Try to get the link again, with the newly processed ending
             let link = await app.db.Link.select("linkId", "url").first().where({
                 "ending": ending,
-                "disabled": false,
             });
         }
         // Record this click in the database (but don't wait up)
