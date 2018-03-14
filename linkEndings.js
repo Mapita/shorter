@@ -222,7 +222,6 @@ function generatePossibleLinkEnding(hashLength){
 async function requestManualLinkEnding(app, ending){
     const existing = await app.db.Link.select("ending").first().where({
         "ending": ending,
-        "disabled": false,
     });
     if(existing){
         const error = new Error("Ending already exists");
@@ -246,9 +245,7 @@ async function requestManualLinkEndings(app, endings){
         endingsDictionary[ending] = true;
     }
     // Check database for existing links with this ending
-    const existing = await app.db.Link.select("ending").first().where({
-        "disabled": false,
-    }).whereIn(
+    const existing = await app.db.Link.select("ending").first().whereIn(
         "ending", endings
     );
     if(existing){
