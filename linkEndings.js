@@ -99,9 +99,7 @@ async function generateLinkEndings(app, hashLength, count){
         );
         // Check for endings that were previously generated
         const existingList = [];
-        existingList.push(...await app.db.Link.select("ending").where({
-            "disabled": false,
-        }).whereIn(
+        existingList.push(...await app.db.Link.select("ending").whereIn(
             "ending", possibleEndings
         ));
         existingList.push(...await app.db.LinkEnding.select("ending").whereIn(
