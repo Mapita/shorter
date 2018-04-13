@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Free open-source link shortener created by Mapita.",
   "homepage": "http://www.mapita.fi",
+  "license": "MIT",
   "main": "main.js",
   "contributors": [
     {
