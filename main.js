@@ -4,7 +4,24 @@ function run(){
             __dirname + "/public_config.json",
             __dirname + "/private_config.json",
         ],
+        environmentVariables: {
+            "MAPITA_TEST_DATABASE_HOST": "testDatabaseHost",
+            "MAPITA_TEST_DATABASE_PORT": "testDatabasePort",
+            "MAPITA_TEST_DATABASE_NAME": "testDatabaseName",
+            "MAPITA_TEST_DATABASE_USER": "testDatabaseUser",
+            "MAPITA_TEST_DATABASE_PASSWORD": "testDatabasePassword",
+        },
         knexClientOptions: {
+            "test": {
+                client: "pg",
+                host: "testDatabaseHost",
+                port: "testDatabasePort",
+                database: "testDatabaseName",
+                user: "testDatabaseUser",
+                password: "testDatabasePassword",
+                poolMin: "testDatabasePoolMin",
+                poolMax: "testDatabasePoolMax",
+            },
             "production": {
                 client: "pg",
                 host: "productionDatabaseHost",
@@ -26,6 +43,9 @@ function run(){
     const port = config.port || 8080;
     app.listen(port, function(){
         console.log(`Now listening on port ${port}.`);
+        if(app.config.runUnitTests){
+            require("./test")(app).doReport();
+        }
     });
 }
 

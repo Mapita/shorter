@@ -16,6 +16,10 @@ module.exports = function(options){
         app.db[modelName] = models[modelName];
     }
     
+    // Read in database schema.
+    // This is used by the test runner to reset the database between tests.
+    app.db.schemaSource = require("fs").readFileSync("./schema.sql").toString();
+    
     // Allows testing in a local environment
     // http://stackoverflow.com/a/18311469/4099022
     app.use(function(request, response, next){

@@ -214,7 +214,6 @@ function generatePossibleLinkEnding(hashLength){
             );  
         }
     }
-    console.log(ending);
     // All done!
     return ending;
 }
@@ -343,7 +342,8 @@ async function visitLink(app, request, link){
         }
     }
     // Actually insert the database row (But don't wait for the promise to resove)
-    app.db.Click.insert(click).then(() => {}).catch(console.error);
+    const insertion = app.db.Click.insert(click);
+    insertion.then(() => {}).catch(console.error);
 };
 
 module.exports = {
