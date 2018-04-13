@@ -269,12 +269,23 @@ const routes = [
             },
         },
     },
+    {
+        "path": "/api/v1/stats/clicks",
+        "method": "POST",
+        "authenticated": true,
+        "description": "Get a list of recent clicks.",
+        "requestAttributes": {
+            "ending": {"type": "string", "required": true},
+            "limit": {"type": "number", "required": false, "default": 100, "maximum": 100},
+            "offset": {"type": "number", "required": false, "default": 0},
+        },
+    },
 ];
 
 async function getLinkIdByEnding(app, ending){
-    return await app.db.Link.select("linkId").where({
+    return (await app.db.Link.select("linkId").first().where({
         "ending": ending,
-    });
+    })).linkId;
 }
 
 module.exports = (app) => ({
@@ -607,7 +618,9 @@ module.exports = (app) => ({
              app.knex.raw("count(*) as count")
         ).whereNotNull(
             locationTypeColumns[request.body.type][0]
-        ).andWhere(
+        ).andWhere({
+            "linkId": linkId, 
+        }).andWhere(
             "clickTime", ">=", startTime
         ).andWhere(
             "clickTime", "<", endTime
@@ -622,6 +635,29 @@ module.exports = (app) => ({
                 click.count = +click.count;
                 return click;
             }),
+        });
+    },
+    
+    "/api/v1/stats/clicks": async (request, response) => {
+        const linkId = await getLinkIdByEnding(app, request.body.ending);
+        const query = app.db.Click.select(
+            "ending", "url", "clickTime",
+            "countryCode", "countryName",
+            "referrerUrl"
+        ).where({
+            "linkId": linkId, 
+        }).limit(
+            request.body.limit
+        ).offset(
+            request.body.offset
+        ).orderBy(
+            "clickTime", "desc"
+        );
+        const clicks = await query;
+        response.success({
+            "ending": request.body.ending,
+            "shortUrl": `${app.config.hostName}/${request.body.ending}`,
+            "clicks": clicks,
         });
     },
 });
