@@ -16,11 +16,11 @@ module.exports = app => {
         })
         return response.data;
     }
-
+    
     shorter.onEachBegin("reset the database", async function(){
         await app.knex.raw(app.db.schemaSource);
     });
-
+    
     shorter.series("shorten one then visit", function(){
         let linkEnding;
         this.test("shorten", async function(){
