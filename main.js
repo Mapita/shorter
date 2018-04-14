@@ -37,13 +37,15 @@ function run(){
 
     const app = require("./app")({
         config: config,
-        knex: config.knex("production"),
+        knex: (config.runUnitTests ?
+            config.knex("test") : config.knex("production")
+        ),
     });
     
     const port = config.port || 8080;
     app.listen(port, function(){
         console.log(`Now listening on port ${port}.`);
-        if(app.config.runUnitTests){
+        if(config.runUnitTests){
             require("./test")(app).doReport();
         }
     });
