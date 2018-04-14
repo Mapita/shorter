@@ -5,6 +5,10 @@ const canary = require("canary-test");
 const shorter = new canary.Group("Shorter");
 
 module.exports = app => {
+    if(!app.config.apiKeys || !app.config.apiKeys.length){
+        app.config.apiKeys = ["testapikey"];
+    }
+    
     async function request(method, url, data){
         if(data){
             data.apiKey = app.config.apiKeys[0];
