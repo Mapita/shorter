@@ -169,6 +169,41 @@ const routes = [
         },
     },
     {
+        "path": "/api/v1/delete/batch",
+        "method": "POST",
+        "authenticated": true,
+        "description": "Delete many shortened links.",
+        "requestAttributes": {
+            "endings": {
+                "type": "list",
+                "required": true,
+                "each": {
+                    "type": "string",
+                    "required": true,
+                },
+            }
+        },
+        "responseAttributes": {
+            "links": {
+                "type": "list",
+                "each": {
+                    "type": "object",
+                    "attributes": {
+                        "url": {"type": "string"},
+                        "ending": {"type": "string"},
+                        "shortUrl": {"type": "string"},
+                        "creationTime": {"type": "timestamp"},
+                        "lastModifiedTime": {"type": "timestamp"},
+                        "tags": {
+                            "type": "list",
+                            "each": {"type": "string"},
+                        },
+                    },
+                },
+            },
+        },
+    },
+    {
         "path": "/api/v1/list",
         "method": "POST",
         "authenticated": true,
@@ -494,6 +529,35 @@ module.exports = (app) => ({
             "tags": tags.map(tag => tag.tagName),
             "creationTime": link.creationTime,
             "lastModifiedTime": link.lastModifiedTime,
+        });
+    },
+    
+    "/api/v1/delete/batch": async (request, response) => {
+        // Delete the row for this link ending
+        const links = await app.db.Link.delete().whereIn(
+            "ending", request.body.endings,
+        ).returning(
+            "linkId", "url", "creationTime", "lastModifiedTime"
+        );
+        // Delete tags for this link ending
+        const tags = await app.db.LinkTag.delete().whereIn(
+            "linkId", links.map(link => link.linkId)
+        ).returning("linkId", "tagName");
+        // Add tags to link objects for inclusion in the response
+        const linksById = {};
+        for(let link of links){
+            linksById[link.linkId] = link;
+        }
+        for(let tag of tags){
+            const link = linksById[tag.linkId];
+            if(link){
+                link.tags = link.tags || [];
+                link.tags.push(tag.tagName);
+            }
+        }
+        // All done!
+        return response.success({
+            "links": links,
         });
     },
     

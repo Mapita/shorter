@@ -171,7 +171,7 @@ module.exports = app => {
     
     shorter.series("batch shorten", function(){
         let links;
-        this.test("shorten", async function(){
+        this.test("batch shorten", async function(){
             const response = await request("post", "/api/v1/shorten/batch", {
                 links: [
                     {url: "a.com"},
@@ -189,12 +189,43 @@ module.exports = app => {
         });
         for(let i = 0; i < 3; i++){
             this.test(`confirm creation of link #${1 + i}`, async function(){
-                const link = links[i];
                 const response = await request("post", "/api/v1/get", {
-                    ending: link.ending,
+                    ending: links[i].ending,
                 });
                 assert(response.success);
-                assert(response.response.url === link.url);
+                assert(response.response.url === links[i].url);
+            });
+        }
+    });
+    
+    shorter.series("batch shorten then batch delete", function(){
+        let links;
+        this.test("batch shorten", async function(){
+            const response = await request("post", "/api/v1/shorten/batch", {
+                links: [
+                    {url: "a.com"},
+                    {url: "b.com"},
+                    {url: "c.com"},
+                ],
+            });
+            assert(response.success);
+            links = response.response.links;
+            assert(links && links.length === 3);
+        });
+        this.test("batch delete", async function(){
+            const response = await request("post", "/api/v1/delete/batch", {
+                endings: links.map(link => link.ending),
+            });
+            assert(response.success);
+            assert(response.response.links && response.response.links.length === 3);
+        });
+        for(let i = 0; i < 3; i++){
+            this.test(`confirm deletion of link #${1 + i}`, async function(){
+                const response = await request("post", "/api/v1/get", {
+                    ending: links[i].ending,
+                });
+                assert(!response.success);
+                assert(response.error.code === 400);
             });
         }
     });
