@@ -74,8 +74,7 @@ const routes = [
                         "tags": {
                             "type": "list?",
                             "required": false,
-                            "minimumLength": 1,
-                            "maximumLength": 1000,
+                            "maximum": 1000,
                             "each": {"type": "string"},
                         },
                     },
@@ -177,6 +176,7 @@ const routes = [
             "endings": {
                 "type": "list",
                 "required": true,
+                "maximum": 1000,
                 "each": {
                     "type": "string",
                     "required": true,

@@ -17,8 +17,8 @@ module.exports = function(validate){
     });
     
     // Additional options:
-    // minLength: The minimum acceptable length of the string.
-    // maxLength: The maximum acceptable length of the string.
+    // minimum: The minimum acceptable length of the string.
+    // maximum: The maximum acceptable length of the string.
     // length: An exact length the string is expected to be.
     validate.addValidator("string", function(value, options, strict){
         if(strict && !type.isString(value)){
@@ -34,7 +34,8 @@ module.exports = function(validate){
     // maximum: The maximum acceptable number of items in the list.
     // length: An exact length the list is expected to be.
     validate.addValidator("list", function(value, options, strict, location){
-        return validate.list(value, options, strict, location);
+        const list = validate.list(value, options, strict, location);
+        return validate.length("List", "elements", options, list);
     });
     
     // Additional options:

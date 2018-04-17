@@ -63,7 +63,7 @@ function validateList(value, options, strict, location){
     // Apply an "each" validator to every element in the array.
     const validatedArray = [];
     const eachValidator = options.each || (value => value);
-    let maxLength = "maxLength" in options ? options.maxLength : 1000;
+    let maxLength = "maximum" in options ? options.maximum : 1000;
     let i = 0;
     for(let element of value){
         if(i >= maxLength){
@@ -209,13 +209,13 @@ function validateBounds(value, options){
 
 // Helper for validating that a list's length is within bounds.
 function validateLength(type, element, options, value){
-    if("minLength" in options && value.length < options.minLength){
+    if("minimum" in options && value.length < options.minimum){
         throw ValidationError(
-            `${type} must contain at minimum ${options.minLength} ${element}.`
+            `${type} must contain at minimum ${options.minimum} ${element}.`
         );
-    }else if("maxLength" in options && value.length > options.maxLength){
+    }else if("maximum" in options && value.length > options.maximum){
         throw ValidationError(
-            `${type} must contain at maximum ${options.maxLength} ${element}.`
+            `${type} must contain at maximum ${options.maximum} ${element}.`
         );
     }else if("length" in options && value.length !== options.length){
         throw ValidationError(
