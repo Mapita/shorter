@@ -7,7 +7,7 @@ chown -R ubuntu:ubuntu /opt/
 # Add a readme to the system describing how to manage it
 cat >>/opt/shorter/readme.txt <<EOL
 This is a backend for shorter (https://github.com/mapita/shorter).
-It was made in June 2018 by Sophie Kirschner.
+It was made in 2018 by Sophie Kirschner.
 Sophie (sophie.kirschner@mapita.fi or sophiek@pineapplemachine.com)
 is the best person to ask about infrastructure and server management.
 
